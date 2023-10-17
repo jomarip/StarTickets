@@ -13,47 +13,51 @@ interface IStarsArena {
 contract StarTickets {
     IStarsArena public starsArena;
 
-    mapping(address => IERC20Burnable) public subjectToToken;  // already correctly defined
+    mapping(address => IERC20Burnable) public subjectToToken;
 
     constructor(address _starsArena) {
         starsArena = IStarsArena(_starsArena);
     }
 
-    function buyTicket(address subject, uint256 amount) public payable {
-        require(msg.value >= amount, "Insufficient funds sent");
+    function buyTickets(address[] memory subjects, uint256[] memory amounts) public payable {
+        require(subjects.length == amounts.length, "Mismatch between subjects and amounts");
+        
+        uint256 totalBuyPrice = 0;
+        for (uint i = 0; i < subjects.length; i++) {
+            uint256 buyPrice = starsArena.getBuyPriceAfterFee(subjects[i], amounts[i]);
+            totalBuyPrice += buyPrice;
+        }
+        require(msg.value >= totalBuyPrice, "Insufficient funds for ticket prices including fees");
 
-        uint256 buyPrice = starsArena.getBuyPriceAfterFee(subject, amount);
-        require(msg.value >= buyPrice, "Insufficient funds for ticket price including fee");
+        for (uint i = 0; i < subjects.length; i++) {
+            starsArena.buyShares{value: starsArena.getBuyPriceAfterFee(subjects[i], amounts[i])}(subjects[i], amounts[i]);
+            IERC20Burnable token = subjectToToken[subjects[i]];
+            if (address(token) == address(0)) {
+                ERC20Burnable newToken = new ERC20Burnable("Ticket Token", "TKT");
+                subjectToToken[subjects[i]] = newToken;
+                token = newToken;
+            }
+            token.mint(msg.sender, amounts[i]);
+        }
 
-        // Buy the ticket
-        starsArena.buyShares{value: buyPrice}(subject, amount);
-
-        // Return remaining funds
-        uint256 remainingFunds = msg.value - buyPrice;
+        uint256 remainingFunds = msg.value - totalBuyPrice;
         if (remainingFunds > 0) {
             payable(msg.sender).transfer(remainingFunds);
         }
-
-        // Now using IERC20Burnable interface
-        IERC20Burnable token = subjectToToken[subject];
-        if (address(token) == address(0)) {
-            // Deploy a new ERC20 for this subject
-            ERC20Burnable newToken = new ERC20Burnable("Ticket Token", "TKT");
-            subjectToToken[subject] = newToken;
-            token = newToken;
-        }
-        token.mint(msg.sender, amount);  // directly use the mapped interface
     }
 
-    function sellTicket(address subject, uint256 amount) public {
-        IERC20Burnable token = subjectToToken[subject];
-        require(address(token) != address(0), "Token for subject not found");
+    function sellTickets(address[] memory subjects, uint256[] memory amounts) public {
+        require(subjects.length == amounts.length, "Mismatch between subjects and amounts");
 
-        token.burnFrom(msg.sender, amount);  // directly use the mapped interface
+        uint256 totalSellPrice = 0;
+        for (uint i = 0; i < subjects.length; i++) {
+            IERC20Burnable token = subjectToToken[subjects[i]];
+            require(address(token) != address(0), "Token for subject not found");
+            token.burnFrom(msg.sender, amounts[i]);
+            totalSellPrice += starsArena.getSellPriceAfterFee(subjects[i], amounts[i]);
+            starsArena.sellShares(subjects[i], amounts[i]);
+        }
 
-        uint256 sellPrice = starsArena.getSellPriceAfterFee(subject, amount);
-        starsArena.sellShares(subject, amount);
-
-        payable(msg.sender).transfer(sellPrice);
+        payable(msg.sender).transfer(totalSellPrice);
     }
 }
