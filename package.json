@@ -1,0 +1,28 @@
+{
+  "name": "startickets",
+  "version": "1.0.0",
+  "description": "An abstraction layer above stars arena to create tickets",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "erc20",
+    "tickets",
+    "starsarena",
+    "startickets",
+    "cooperative"
+  ],
+  "author": "Jomari Peterson",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.2.3",
+    "@nomiclabs/hardhat-waffle": "^2.0.6",
+    "@openzeppelin/contracts": "^5.0.0",
+    "@types/sinon-chai": "^3.2.10",
+    "chai": "^4.3.10",
+    "ethereum-waffle": "^3.4.4",
+    "ethers": "^5.7.2",
+    "hardhat": "^2.18.1"
+  }
+}
