@@ -194,7 +194,7 @@ contract StarTickets {
         uint256 sortLen = contributors.length;  // For sorting
         sortContributors(contributors);
 
-        // Distribute the received Ether to contributors
+        // Distribute the received Avax to contributors
         uint256 tokensUsed = 0;
         for (uint256 i = 0; i < sortLen && tokensUsed < thresholdAmount; i++) {
             uint256 amountToUse = contributors[i].contribution;
@@ -206,8 +206,8 @@ contract StarTickets {
             // Reduce the contributor's remaining tokens
             contributors[i].contribution -= amountToUse;
 
-            uint256 etherAmount = (amountToUse * sellPrice) / thresholdAmount;
-            contributors[i].addr.transfer(etherAmount);
+            uint256 avaxAmount = (amountToUse * sellPrice) / thresholdAmount;
+            contributors[i].addr.transfer(avaxAmount);
         }
 
         sellPoolTotalTokens[subject] -= thresholdAmount;
