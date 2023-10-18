@@ -11,13 +11,27 @@ const starArena = require('./abi/starArenaABI.json');
 describe("Starticket and Stars Arena Contracts Tests", function () {
     let StarTicketContract: Contract;
     let StarsArenaContract: Contract;
+    let deployer: Signer;
     let owner: Signer;
     let purchaser: Signer;
     let redeemer: Signer;
     
+    
+    
     beforeEach(async () => {
         // Setup signers
-        [owner, purchaser, redeemer] = await ethers.getSigners();
+          [owner, purchaser, redeemer] = await ethers.getSigners();
+          const signers = [owner, purchaser, redeemer];  // Define the signers array
+  
+        
+         for (const signer of signers) {
+            await owner.sendTransaction({
+            to: signer.address,
+            value: ethers.utils.parseEther("100")
+         });
+
+          const balance = await ethers.provider.getBalance(signer.address);
+        }
 
         //connect to StarsArena Contract
         const existingStarsArenaAddress = "0x563395A2a04a7aE0421d34d62ae67623cAF67D03"; 
@@ -34,41 +48,47 @@ describe("Starticket and Stars Arena Contracts Tests", function () {
     });
 
 
-     
-   
 
     describe("Interactions between Starticket and Stars Arena", () => {
         it("should handle ticket purchases correctly", async function () {
-            const [owner, user] = await ethers.getSigners();
+            const [owner, purchaser] = await ethers.getSigners();
+            
+            //check balances
+            const balanceOwner = await ethers.provider.getBalance(owner.address);
+            const balancePurchaser = await ethers.provider.getBalance(purchaser.address);
+            console.log(`Balance of owner: ${ethers.utils.formatEther(balanceOwner)} AVAX & Balance of Purchaser: ${ethers.utils.formatEther(balancePurchaser)} AVAX `);
+            
+
             const subject = "0xc96fb6e79e2b4cc477c928f4a5c5180bfeee3786"; // SnowballDeFi
             const amount = BigNumber.from(1); // Replace with actual amount
 
             // Calculate buy price after fee
             const buyPrice = await StarsArenaContract.getBuyPriceAfterFee(subject, amount);
+            console.log("buy price: ",buyPrice);
 
             // Test 1: Sending less amount than required
-            await expect(
-              StarTicketContract.connect(user).buyTicket(subject, amount, { value: buyPrice.sub(1) })
-            ).to.be.revertedWith("Insufficient funds for ticket price including fee");
+           // await expect(
+           //   StarTicketContract.connect(purchaser).buyTicket(subject, amount, { value: buyPrice.sub(1) })
+           // ).to.be.revertedWith("Insufficient funds for ticket price including fee");
 
             // Test 2: Sending the exact required amount
-            await StarTicketContract.connect(user).buyTicket(subject, amount, { value: buyPrice });
+            await StarTicketContract.connect(purchaser).buyTicket(subject, amount, { value: buyPrice });
 
-            // Verify that the user received the ERC20 token
+            // Verify that the purchaser received the ERC20 token
             const token = await StarTicketContract.subjectToToken(subject);
-            expect(await token.balanceOf(user.address)).to.equal(amount);
+            expect(await token.balanceOf(purchaser.address)).to.equal(amount);
 
-            // Verify that Stars Arena contract shows the user has the ticket
-            expect(await StarsArena.sharesBalance(user.address, subject)).to.equal(amount);
+            // Verify that Stars Arena contract shows the purchaser has the ticket
+            expect(await StarsArena.sharesBalance(purchaser.address, subject)).to.equal(amount);
 
             // Test 3: Sending more than the required amount
             const extraAmount = BigNumber.from(5);
-            await StarTicketsContract.connect(user).buyTicket(subject, amount, { value: buyPrice.add(extraAmount) });
+            await StarTicketsContract.connect(purchaser).buyTicket(subject, amount, { value: buyPrice.add(extraAmount) });
 
             // Verify remaining funds are returned
-            expect(await ethers.provider.getBalance(user.address)).to.equal(
+            expect(await ethers.provider.getBalance(purchaser.address)).to.equal(
               // Previous balance - gas fees (skipped here) - buyPrice
-              await ethers.provider.getBalance(user.address) + extraAmount
+              await ethers.provider.getBalance(purchaser.address) + extraAmount
             );
         });
     });

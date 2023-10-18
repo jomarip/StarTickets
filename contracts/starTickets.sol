@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 
 interface IStarsArena {
@@ -17,9 +18,17 @@ interface IERC20Burnable is IERC20 {
     function mint(address to, uint256 amount) external; 
 }
 
-contract MyBurnableToken is ERC20Burnable {
-    constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
+contract MyBurnableToken is ERC20Burnable, Ownable {
+    constructor(string memory name, string memory symbol, address initialOwner) 
+        ERC20(name, symbol) 
+        Ownable(initialOwner)
+    {}
+
+    function mint(address to, uint256 amount) external onlyOwner {
+        _mint(to, amount);
+    }
 }
+
 
 contract StarTickets {
     IStarsArena public starsArena = IStarsArena(0x563395A2a04a7aE0421d34d62ae67623cAF67D03);
@@ -45,10 +54,12 @@ contract StarTickets {
         IERC20Burnable token = subjectToToken[subject];
         if (address(token) == address(0)) {
             // Deploy a new ERC20 for this subject
-            ERC20Burnable newToken = new MyBurnableToken("Ticket Token", "TKT");
+            ERC20Burnable newToken = new MyBurnableToken("Ticket Token", "TKT", address(this));
             subjectToToken[subject] = IERC20Burnable(address(newToken));
             token = IERC20Burnable(address(newToken));
+
         }
+        
         token.mint(msg.sender, amount);  // directly use the mapped interface
     }
 
@@ -63,4 +74,11 @@ contract StarTickets {
 
         payable(msg.sender).transfer(sellPrice);
     }
+    
+    receive() external payable {
+    // Custom function logic
+    }
+
+    
+    
 }
