@@ -3,13 +3,13 @@ import { Contract, Signer, Wallet, BigNumber } from "ethers";
 import { expect } from "chai";
 
 const { parseEther, formatEther } = ethers.utils;
-const { deployContract, solidity } = waffle;
+const { deployContract } = waffle;
 
 const starArena = require('./abi/starArenaABI.json');
 
 
 describe("Starticket and Stars Arena Contracts Tests", function () {
-    let StarticketContract: Contract;
+    let StarTicketContract: Contract;
     let StarsArenaContract: Contract;
     let owner: Signer;
     let purchaser: Signer;
@@ -25,7 +25,7 @@ describe("Starticket and Stars Arena Contracts Tests", function () {
     
         // Deploy the StarTickets Contract
         const StarTickets = await ethers.getContractFactory("StarTickets");
-        starticketContract = await deployContract(owner, StarTickets, [starsArenaContract.address]);
+        StarTicketContract = await deployContract(owner, StarTickets, [StarsArenaContract.address]);
      });
      
    
