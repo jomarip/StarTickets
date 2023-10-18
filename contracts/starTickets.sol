@@ -22,13 +22,9 @@ contract MyBurnableToken is ERC20Burnable {
 }
 
 contract StarTickets {
-    IStarsArena public starsArena;
+    IStarsArena public starsArena = IStarsArena(0x563395A2a04a7aE0421d34d62ae67623cAF67D03);
 
     mapping(address => IERC20Burnable) public subjectToToken;  // already correctly defined
-
-    constructor(address _starsArena) {
-        starsArena = IStarsArena(_starsArena);
-    }
 
     function buyTicket(address subject, uint256 amount) public payable {
         require(msg.value >= amount, "Insufficient funds sent");

@@ -3,7 +3,7 @@ import { Contract, Signer, Wallet, BigNumber } from "ethers";
 import { expect } from "chai";
 
 const { parseEther, formatEther } = ethers.utils;
-const { deployContract } = waffle;
+const { deployContract, solidity } = waffle;
 
 const starArena = require('./abi/starArenaABI.json');
 
@@ -16,17 +16,24 @@ describe("Starticket and Stars Arena Contracts Tests", function () {
     let redeemer: Signer;
     
     beforeEach(async () => {
-         // Setup signers
+        // Setup signers
         [owner, purchaser, redeemer] = await ethers.getSigners();
-        
+
         //connect to StarsArena Contract
         const existingStarsArenaAddress = "0x563395A2a04a7aE0421d34d62ae67623cAF67D03"; 
         StarsArenaContract = new ethers.Contract(existingStarsArenaAddress, starArena, owner);
-    
-        // Deploy the StarTickets Contract
-        const StarTickets = await ethers.getContractFactory("StarTickets");
-        StarTicketContract = await deployContract(owner, StarTickets, [StarsArenaContract.address]);
-     });
+
+        // Log the address of StarsArenaContract to confirm it's initialized
+        console.log("StarsArenaContract.address:", StarsArenaContract.address);
+
+        const StarTicketsFactory = await ethers.getContractFactory("StarTickets");
+        //console.log(starTickets);
+        StarTicketContract = await StarTicketsFactory.connect(owner).deploy();
+        await StarTicketContract.deployed();
+
+    });
+
+
      
    
 
@@ -37,26 +44,26 @@ describe("Starticket and Stars Arena Contracts Tests", function () {
             const amount = BigNumber.from(1); // Replace with actual amount
 
             // Calculate buy price after fee
-            const buyPrice = await starsArena.getBuyPriceAfterFee(subject, amount);
+            const buyPrice = await StarsArenaContract.getBuyPriceAfterFee(subject, amount);
 
             // Test 1: Sending less amount than required
             await expect(
-              starTickets.connect(user).buyTicket(subject, amount, { value: buyPrice.sub(1) })
+              StarTicketContract.connect(user).buyTicket(subject, amount, { value: buyPrice.sub(1) })
             ).to.be.revertedWith("Insufficient funds for ticket price including fee");
 
             // Test 2: Sending the exact required amount
-            await starTickets.connect(user).buyTicket(subject, amount, { value: buyPrice });
+            await StarTicketContract.connect(user).buyTicket(subject, amount, { value: buyPrice });
 
             // Verify that the user received the ERC20 token
-            const token = await starTickets.subjectToToken(subject);
+            const token = await StarTicketContract.subjectToToken(subject);
             expect(await token.balanceOf(user.address)).to.equal(amount);
 
             // Verify that Stars Arena contract shows the user has the ticket
-            expect(await starsArena.sharesBalance(user.address, subject)).to.equal(amount);
+            expect(await StarsArena.sharesBalance(user.address, subject)).to.equal(amount);
 
             // Test 3: Sending more than the required amount
             const extraAmount = BigNumber.from(5);
-            await starTickets.connect(user).buyTicket(subject, amount, { value: buyPrice.add(extraAmount) });
+            await StarTicketsContract.connect(user).buyTicket(subject, amount, { value: buyPrice.add(extraAmount) });
 
             // Verify remaining funds are returned
             expect(await ethers.provider.getBalance(user.address)).to.equal(
