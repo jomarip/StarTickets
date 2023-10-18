@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -8,6 +9,16 @@ interface IStarsArena {
     function sellShares(address sharesSubject, uint256 amount) external payable;
     function getBuyPriceAfterFee(address sharesSubject, uint256 amount) external view returns (uint256);
     function getSellPriceAfterFee(address sharesSubject, uint256 amount) external view returns (uint256);
+}
+
+interface IERC20Burnable is IERC20 {
+    function burn(uint256 amount) external;
+    function burnFrom(address account, uint256 amount) external;
+    function mint(address to, uint256 amount) external; 
+}
+
+contract MyBurnableToken is ERC20Burnable {
+    constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
 }
 
 contract StarTickets {
@@ -38,9 +49,9 @@ contract StarTickets {
         IERC20Burnable token = subjectToToken[subject];
         if (address(token) == address(0)) {
             // Deploy a new ERC20 for this subject
-            ERC20Burnable newToken = new ERC20Burnable("Ticket Token", "TKT");
-            subjectToToken[subject] = newToken;
-            token = newToken;
+            ERC20Burnable newToken = new MyBurnableToken("Ticket Token", "TKT");
+            subjectToToken[subject] = IERC20Burnable(address(newToken));
+            token = IERC20Burnable(address(newToken));
         }
         token.mint(msg.sender, amount);  // directly use the mapped interface
     }

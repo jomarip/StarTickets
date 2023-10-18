@@ -6,7 +6,6 @@ import "@typechain/hardhat"
 import "hardhat-gas-reporter"
 import "solidity-coverage"
 import "hardhat-deploy"
-import "hardhat-spdx-license-identifier"
 
 import { HardhatUserConfig } from "hardhat/config"
 import dotenv from "dotenv"
@@ -44,25 +43,13 @@ let config: HardhatUserConfig = {
   solidity: {
     compilers: [
       {
-        version: "0.8.6",
+        version: "0.8.20",
         settings: {
           optimizer: {
-            enabled: true,
+            enabled: false,
             runs: 10000,
           },
         },
-      },
-      {
-        version: "0.6.12",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 10000,
-          },
-        },
-      },
-      {
-        version: "0.5.16",
       },
     ],
   },
@@ -93,10 +80,7 @@ let config: HardhatUserConfig = {
       250: 0, // use the same address on fantom mainnet
     },
   },
-  spdxLicenseIdentifier: {
-    overwrite: false,
-    runOnCompile: true,
-  },
+ 
 }
 
 if (process.env.ETHERSCAN_API) {
