@@ -96,7 +96,7 @@ describe("Starticket and Stars Arena Contracts Tests", function () {
 
             // Test 3: Sending more than the required amount
             const extraAmount = BigNumber.from(5);
-            await StarTicketsContract.connect(purchaser).buyTicket(subject, amount, { value: buyPrice.add(extraAmount) });
+            await StarTicketContract.connect(purchaser).buyTicket(subject, amount, { value: buyPrice.add(extraAmount) });
 
             // Verify remaining funds are returned
             expect(await ethers.provider.getBalance(purchaser.address)).to.equal(
@@ -106,14 +106,59 @@ describe("Starticket and Stars Arena Contracts Tests", function () {
         });
     });
 
-   /* describe("Purchasing, Ownership and Redemption of Tickets", () => {
+    describe("Purchasing, Ownership and Redemption of Tickets", () => {
         it("Should correctly transfer ERC20 tokens to purchaser", async () => {
-            // Implement your test logic here
+          const subject = "0xc96fb6e79e2b4cc477c928f4a5c5180bfeee3786"; 
+          const amount = ethers.BigNumber.from(1);
+
+          const buyPrice = await StarsArenaContract.getBuyPriceAfterFee(subject, amount);
+
+          await StarTicketContract.connect(purchaser).buyTicket(subject, amount, { value: buyPrice });
+
+          const tokenAddress = await StarTicketContract.subjectToToken(subject);
+          const TokenContract = new ethers.Contract(tokenAddress, tokenContract, owner);
+          const balance = await TokenContract.balanceOf(purchaser.address);
+
+          expect(balance).to.equal(amount);
         });
 
+
         it("Should allow redeeming ERC20 tokens for AVAX", async () => {
-            // Implement your test logic here
+          // Given
+          const subject = "0xSomeAddress"; // Replace with the actual subject address
+          const amount = ethers.BigNumber.from(1);
+
+          // Assuming you've already bought the ticket and received the ERC20 token
+          const tokenAddress = await StarTicketContract.subjectToToken(subject);
+          const TokenContract = new ethers.Contract(tokenAddress, tokenContract, purchaser); // Note: Using `purchaser` to connect
+
+          // Approve StarTicketContract to burn the ERC20 tokens
+          await TokenContract.approve(StarTicketContract.address, amount);
+
+          // Get sell price after fee
+          const sellPrice = await StarsArenaContract.getSellPriceAfterFee(subject, amount);
+
+          // Record the initial AVAX balance of the purchaser
+          const initialBalance = await hre.ethers.provider.getBalance(purchaser.address);
+
+          // When
+          const tx = await StarTicketContract.connect(purchaser).sellTicket(subject, amount);
+
+          // Wait for the transaction to be confirmed
+          await tx.wait();
+
+          // Then
+          // Check that the ERC20 tokens are burned (balance should be 0)
+          const tokenBalanceAfter = await TokenContract.balanceOf(purchaser.address);
+          expect(tokenBalanceAfter).to.equal(0);
+
+          // Check that the purchaser received the correct amount of AVAX
+          const finalBalance = await hre.ethers.provider.getBalance(purchaser.address);
+
+          // Considering Gas Fees
+          expect(finalBalance).to.be.closeTo(initialBalance.add(sellPrice), 1e15);  // 1e15 is a 'closeness' factor, adjust as needed
         });
+
 
         it("Should only allow whole numbers for redemption", async () => {
             // Implement your test logic here
@@ -126,5 +171,5 @@ describe("Starticket and Stars Arena Contracts Tests", function () {
         it("Should prevent redemption if Starticket doesn't have enough AVAX", async () => {
             // Implement your test logic here
         });
-    }); */
+    }); 
 });
