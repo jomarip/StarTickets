@@ -6,11 +6,13 @@ const { parseEther, formatEther } = ethers.utils;
 const { deployContract, solidity } = waffle;
 
 const starArena = require('./abi/starArenaABI.json');
+const tokenContract = require('./abi/tokenContractABI.json');
 
 
 describe("Starticket and Stars Arena Contracts Tests", function () {
     let StarTicketContract: Contract;
     let StarsArenaContract: Contract;
+    let TokenContract: Contract;
     let deployer: Signer;
     let owner: Signer;
     let purchaser: Signer;
@@ -66,20 +68,31 @@ describe("Starticket and Stars Arena Contracts Tests", function () {
             const buyPrice = await StarsArenaContract.getBuyPriceAfterFee(subject, amount);
             console.log("buy price: ",buyPrice);
 
-            // Test 1: Sending less amount than required
+            // Test 1: Sending less amount than required - breaking due to higher level revert
            // await expect(
            //   StarTicketContract.connect(purchaser).buyTicket(subject, amount, { value: buyPrice.sub(1) })
            // ).to.be.revertedWith("Insufficient funds for ticket price including fee");
 
             // Test 2: Sending the exact required amount
             await StarTicketContract.connect(purchaser).buyTicket(subject, amount, { value: buyPrice });
+           
+            //Token Address
+            const tokenAddress = await StarTicketContract.subjectToToken(subject);
+            console.log("Deployed ERC20 Address: ", tokenAddress);
+            
+            // Create an instance of the token contract
+            const TokenContract = new ethers.Contract(tokenAddress, tokenContract, owner); 
 
-            // Verify that the purchaser received the ERC20 token
-            const token = await StarTicketContract.subjectToToken(subject);
-            expect(await token.balanceOf(purchaser.address)).to.equal(amount);
+            // Get the balance of the purchaser
+            const balance = await TokenContract.balanceOf(purchaser.address);
+            console.log("Balance of purchaser: ", balance.toString());
 
-            // Verify that Stars Arena contract shows the purchaser has the ticket
-            expect(await StarsArena.sharesBalance(purchaser.address, subject)).to.equal(amount);
+            expect(balance).to.equal(amount);
+
+
+            // Verify that Stars Arena contract shows the StartTicket Contract has the ticket
+            //StarTicketContract Needs a function to check its shares for this check to work
+           // expect(await StarsArenaContract.getMyShares(StarTicketContract.address, subject)).to.equal(amount);
 
             // Test 3: Sending more than the required amount
             const extraAmount = BigNumber.from(5);
