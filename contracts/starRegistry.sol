@@ -14,10 +14,9 @@ contract StarRegistry is Ownable {
     event RegistrarAdded(address registrar);
     event RegistrarRemoved(address registrar);
     
-    constructor() {
-        owner = msg.sender;
+    constructor(address initialOwner) Ownable(initialOwner) {
     }
-
+    
     modifier onlyRegistrar() {
         require(registrars[msg.sender], "You are not a registrar");
         _;

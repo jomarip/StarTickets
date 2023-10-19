@@ -67,12 +67,15 @@ contract StarTickets {
             string memory starName = starRegistry.getStarOfSubjectAddress(subject);  // Fetch star name
             
             //Create a Token with the Star's Name
+            string memory tokenName;
+            string memory tokenSymbol;
+
             if (bytes(starName).length > 0) {
-            string memory tokenName = string(abi.encodePacked(starName, " Star Ticket"));
-            string memory tokenSymbol = string(abi.encodePacked(starName, "TKT"));
+                tokenName = string(abi.encodePacked(starName, " Star Ticket"));
+                tokenSymbol = string(abi.encodePacked(starName, "TKT"));
             } else {
-            string memory tokenName = string(abi.encodePacked("Star Ticket"));
-            string memory tokenSymbol = string(abi.encodePacked("TKT"));
+                tokenName = "Star Ticket";
+                tokenSymbol = "TKT";
             }
             
             // Deploy a new ERC20 for this subject

@@ -12,6 +12,7 @@ const tokenContract = require('./abi/tokenContractABI.json');
 describe("Starticket and Stars Arena Contracts Tests", function () {
     let StarTicketContract: Contract;
     let StarsArenaContract: Contract;
+    let StarRegistry: Contract;
     let TokenContract: Contract;
     let deployer: Signer;
     let owner: Signer;
@@ -41,10 +42,18 @@ describe("Starticket and Stars Arena Contracts Tests", function () {
 
         // Log the address of StarsArenaContract to confirm it's initialized
         console.log("StarsArenaContract.address:", StarsArenaContract.address);
+        
+        // Deploy StarRegistry
+        const StarRegistryFactory = await ethers.getContractFactory("StarRegistry");
+        StarRegistry = await StarRegistryFactory.connect(owner).deploy(owner.address);
+        await StarRegistry.deployed();
+        
+        console.log("StarRegistry.address:", StarRegistry.address);
 
+        //Deploy StarTickets
         const StarTicketsFactory = await ethers.getContractFactory("StarTickets");
         //console.log(starTickets);
-        StarTicketContract = await StarTicketsFactory.connect(owner).deploy();
+        StarTicketContract = await StarTicketsFactory.connect(owner).deploy(StarsArenaContract.address, StarRegistry.address);
         await StarTicketContract.deployed();
 
     });
