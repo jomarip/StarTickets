@@ -75,9 +75,13 @@ describe("Starticket and Stars Arena Contracts Tests", function () {
             const balancePurchaser = await ethers.provider.getBalance(purchaser.address);
             console.log(`Balance of owner: ${ethers.utils.formatEther(balanceOwner)} AVAX & Balance of Purchaser: ${ethers.utils.formatEther(balancePurchaser)} AVAX `);
             
-
+            
             const subject = "0xc96fb6e79e2b4cc477c928f4a5c5180bfeee3786"; // SnowballDeFi
+            const starName = "SnowballDeFi";
             const amount = BigNumber.from(1); // Replace with actual amount
+            
+            //add the Star Name and Subject to Registry
+            await StarRegistry.connect(owner).addStar(starName,subject);
 
             // Calculate buy price after fee
             const buyPrice = await StarsArenaContract.getBuyPriceAfterFee(subject, amount);
@@ -101,9 +105,12 @@ describe("Starticket and Stars Arena Contracts Tests", function () {
             // Get the balance of the purchaser
             const balance = await TokenContract.balanceOf(purchaser.address);
             console.log("Balance of purchaser: ", balance.toString());
+            
+            // Log the name of the token
+            const tokenName = await TokenContract.name(); 
+            console.log("Token Name: ", tokenName);
 
             expect(balance).to.equal(amount);
-
 
             // Verify that Stars Arena contract shows the StartTicket Contract has the ticket
             //StarTicketContract Needs a function to check its shares for this check to work

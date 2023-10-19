@@ -18,7 +18,7 @@ contract StarRegistry is Ownable {
     }
     
     modifier onlyRegistrar() {
-        require(registrars[msg.sender], "You are not a registrar");
+        require(msg.sender == owner() || registrars[msg.sender], "You are not a registrar");
         _;
     }
 
