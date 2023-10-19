@@ -48,6 +48,12 @@ describe("Starticket and Stars Arena Contracts Tests", function () {
         await StarTicketContract.deployed();
 
     });
+    
+    
+    async function purchaseTicket(purchaser: Signer, subject: string, amount: BigNumber, buyPrice: BigNumber) {
+          await StarTicketContract.connect(purchaser).buyTicket(subject, amount, { value: buyPrice });
+    }
+
 
 
 
@@ -69,9 +75,9 @@ describe("Starticket and Stars Arena Contracts Tests", function () {
             console.log("buy price: ",buyPrice);
 
             // Test 1: Sending less amount than required - breaking due to higher level revert
-           // await expect(
-           //   StarTicketContract.connect(purchaser).buyTicket(subject, amount, { value: buyPrice.sub(1) })
-           // ).to.be.revertedWith("Insufficient funds for ticket price including fee");
+            await expect(
+              StarTicketContract.connect(purchaser).buyTicket(subject, amount, { value: buyPrice.sub(1) })
+            ).to.be.reverted;
 
             // Test 2: Sending the exact required amount
             await StarTicketContract.connect(purchaser).buyTicket(subject, amount, { value: buyPrice });
@@ -103,9 +109,9 @@ describe("Starticket and Stars Arena Contracts Tests", function () {
 
             // Verify remaining funds are returned
             //expect(await ethers.provider.getBalance(purchaser.address)).to.equal(
-              // Previous balance - gas fees (skipped here) - buyPrice
-              //await ethers.provider.getBalance(purchaser.address) + extraAmount
-            );
+            //Previous balance - gas fees (skipped here) - buyPrice
+            //await ethers.provider.getBalance(purchaser.address) + extraAmount
+            //);
         });
     });
 
@@ -128,10 +134,13 @@ describe("Starticket and Stars Arena Contracts Tests", function () {
 
         it("Should allow redeeming ERC20 tokens for AVAX", async () => {
           // Given
-          const subject = "0xSomeAddress"; // Replace with the actual subject address
+          const subject = "0xc96fb6e79e2b4cc477c928f4a5c5180bfeee3786"; // Replace with the actual subject address
           const amount = ethers.BigNumber.from(1);
+          const buyPrice = await StarsArenaContract.getBuyPriceAfterFee(subject, amount);
+          
+          await purchaseTicket(purchaser, subject, amount, buyPrice);
 
-          // Assuming you've already bought the ticket and received the ERC20 token
+          // Given you have the ticket and received the ERC20 token
           const tokenAddress = await StarTicketContract.subjectToToken(subject);
           const TokenContract = new ethers.Contract(tokenAddress, tokenContract, purchaser); // Note: Using `purchaser` to connect
 
@@ -164,15 +173,78 @@ describe("Starticket and Stars Arena Contracts Tests", function () {
 
 
         it("Should only allow whole numbers for redemption", async () => {
-            // Implement your test logic here
+            // Given
+          const subject = "0xc96fb6e79e2b4cc477c928f4a5c5180bfeee3786"; // Replace with the actual subject address
+          const amount = ethers.BigNumber.from(1);
+          const buyPrice = await StarsArenaContract.getBuyPriceAfterFee(subject, amount);
+          const invalidAmount = ethers.utils.parseUnits("0.5", 18);  // Half of a token
+          
+          await purchaseTicket(purchaser, subject, amount, buyPrice);
+          
+           // Given you have the ticket and received the ERC20 token
+          const tokenAddress = await StarTicketContract.subjectToToken(subject);
+          const TokenContract = new ethers.Contract(tokenAddress, tokenContract, purchaser); // Note: Using `purchaser` to connect
+
+          
+           // Approve for ticket selling
+            await TokenContract.approve(StarTicketContract.address, invalidAmount);
+
+            // Attempting to redeem a non-whole number should be reverted
+            await expect(
+              StarTicketContract.connect(purchaser).sellTicket(subject, invalidAmount)
+            ).to.be.reverted;
         });
 
         it("Should prevent redeeming more tokens than owned", async () => {
-            // Implement your test logic here
+            // Given
+          const subject = "0xc96fb6e79e2b4cc477c928f4a5c5180bfeee3786"; // Replace with the actual subject address
+          const amount = ethers.BigNumber.from(1);
+          const buyPrice = await StarsArenaContract.getBuyPriceAfterFee(subject, amount);
+          const excessiveAmount = ethers.BigNumber.from("2");  // More than owned
+          
+          await purchaseTicket(purchaser, subject, amount, buyPrice);
+          
+           // Given you have the ticket and received the ERC20 token
+          const tokenAddress = await StarTicketContract.subjectToToken(subject);
+          const TokenContract = new ethers.Contract(tokenAddress, tokenContract, purchaser); // Note: Using `purchaser` to connect
+
+          
+          // Approve for ticket selling
+          await TokenContract.approve(StarTicketContract.address, excessiveAmount);
+
+          // Attempting to redeem more tickets than owned should be reverted
+          await expect(
+            StarTicketContract.connect(purchaser).sellTicket(subject, excessiveAmount)
+            ).to.be.reverted;
         });
 
-        it("Should prevent redemption if Starticket doesn't have enough AVAX", async () => {
-            // Implement your test logic here
+        it("Should prevent redemption if StarsArena doesn't have enough AVAX", async () => {
+            // Given
+          const subject = "0xc96fb6e79e2b4cc477c928f4a5c5180bfeee3786"; // Replace with the actual subject address
+          const amount = ethers.BigNumber.from(1);
+          const buyPrice = await StarsArenaContract.getBuyPriceAfterFee(subject, amount);
+          
+          await purchaseTicket(purchaser, subject, amount, buyPrice);
+          
+           // Given you have the ticket and received the ERC20 token
+          const tokenAddress = await StarTicketContract.subjectToToken(subject);
+          const TokenContract = new ethers.Contract(tokenAddress, tokenContract, purchaser); // Note: Using `purchaser` to connect
+
+          
+          // Set the balance of the Starticket contract to zero
+          await hre.network.provider.send("hardhat_setBalance", [
+              StarsArenaContract.address,
+              "0x0"
+          ]);
+
+          // Approve for ticket selling
+          await TokenContract.approve(StarTicketContract.address, amount);
+
+          // Attempting to redeem should be reverted due to insufficient AVAX in the contract
+          await expect(
+              StarTicketContract.connect(purchaser).sellTicket(subject, amount)
+            ).to.be.reverted;
+
         });
     }); 
 });
