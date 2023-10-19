@@ -12,6 +12,11 @@ interface IStarsArena {
     function getSellPriceAfterFee(address sharesSubject, uint256 amount) external view returns (uint256);
 }
 
+interface IStarRegistry {
+    function getSubjectAddressOfStar(string memory _starName) external view returns (address);
+    function getStarOfSubjectAddress(address _subjectAddress) external view returns (string memory);
+}
+
 interface IERC20Burnable is IERC20 {
     function burn(uint256 amount) external;
     function burnFrom(address account, uint256 amount) external;
@@ -31,9 +36,15 @@ contract MyBurnableToken is ERC20Burnable, Ownable {
 
 
 contract StarTickets {
-    IStarsArena public starsArena = IStarsArena(0x563395A2a04a7aE0421d34d62ae67623cAF67D03);
+    IStarsArena public starsArena;
+    IStarRegistry public starRegistry;
 
     mapping(address => IERC20Burnable) public subjectToToken;  // already correctly defined
+    
+    constructor(address _starsArenaAddress, address _starRegistryAddress) {
+        starsArena = IStarsArena(_starsArenaAddress);
+        starRegistry = IStarRegistry(_starRegistryAddress); 
+    }
 
     function buyTicket(address subject, uint256 amount) public payable {
         require(msg.value >= amount, "Insufficient funds sent");
@@ -53,8 +64,22 @@ contract StarTickets {
         // Now using IERC20Burnable interface
         IERC20Burnable token = subjectToToken[subject];
         if (address(token) == address(0)) {
+            string memory starName = starRegistry.getStarOfSubjectAddress(subject);  // Fetch star name
+            
+            //Create a Token with the Star's Name
+            string memory tokenName;
+            string memory tokenSymbol;
+
+            if (bytes(starName).length > 0) {
+                tokenName = string(abi.encodePacked(starName, " Star Ticket"));
+                tokenSymbol = string(abi.encodePacked(starName, "TKT"));
+            } else {
+                tokenName = "Star Ticket";
+                tokenSymbol = "TKT";
+            }
+            
             // Deploy a new ERC20 for this subject
-            ERC20Burnable newToken = new MyBurnableToken("Ticket Token", "TKT", address(this));
+            ERC20Burnable newToken = new MyBurnableToken(tokenName, tokenSymbol, address(this));
             subjectToToken[subject] = IERC20Burnable(address(newToken));
             token = IERC20Burnable(address(newToken));
 
