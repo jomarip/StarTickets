@@ -54,7 +54,7 @@ describe("Starticket and Stars Arena Contracts Tests", function () {
         const StarTicketsFactory = await ethers.getContractFactory("StarTickets");
         StarTicketContract = await StarTicketsFactory.connect(owner).deploy();
         await StarTicketContract.deployed();
-        await StarTicketContract.connect(owner).initialize(StarsArenaContract.address, StarRegistry.address);
+        await StarTicketContract.connect(owner).initialize(StarsArenaContract.address, StarRegistry.address, owner.address);
         
         
 

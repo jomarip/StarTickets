@@ -8,8 +8,8 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
 interface IStarsArena {
-    function buyShares(address sharesSubject, uint256 amount) external payable;
-    function sellShares(address sharesSubject, uint256 amount) external payable;
+    function buySharesWithReferrer(address sharesSubject, uint256 amount, address referrer) external payable;
+    function sellSharesWithReferrer(address sharesSubject, uint256 amount, address referrer) external payable;
     function getBuyPriceAfterFee(address sharesSubject, uint256 amount) external view returns (uint256);
     function getSellPriceAfterFee(address sharesSubject, uint256 amount) external view returns (uint256);
 }
@@ -40,6 +40,7 @@ contract MyBurnableToken is ERC20Burnable, Ownable {
 contract StarTickets is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     IStarsArena public starsArena;
     IStarRegistry public starRegistry;
+    address public referral;
 
     mapping(address => IERC20Burnable) public subjectToToken;  
     
@@ -47,14 +48,16 @@ contract StarTickets is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     event TicketSold(address indexed seller, address indexed subject, uint256 amount, uint256 price);
     event AvaxWithdrawn(address indexed owner, uint256 amount);
     event ERC20Withdrawn(address indexed owner, address indexed tokenAddress, uint256 amount);
+    event ReferrerChanged(address indexed oldReferrer, address indexed newReferrer);
     
-    function initialize(address _starsArenaAddress, address _starRegistryAddress) public initializer {
+    function initialize(address _starsArenaAddress, address _starRegistryAddress, address _referrer) public initializer {
         // Initialize the upgradeable contracts
         __Ownable_init(msg.sender);  // Initialize Ownable
         __ReentrancyGuard_init();  // Initialize ReentrancyGuard
 
         starsArena = IStarsArena(_starsArenaAddress);
         starRegistry = IStarRegistry(_starRegistryAddress);
+        referral = _referrer;
     }
 
     function buyTicket(address subject, uint256 amount) public payable nonReentrant{
@@ -64,7 +67,7 @@ contract StarTickets is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         require(msg.value >= buyPrice, "Insufficient funds for ticket price including fee");
 
         // Buy the ticket
-        starsArena.buyShares{value: buyPrice}(subject, amount);
+        starsArena.buySharesWithReferrer{value: buyPrice}(subject, amount,referral);
 
         // Return remaining funds
         uint256 remainingFunds = msg.value - buyPrice;
@@ -107,7 +110,7 @@ contract StarTickets is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         token.burnFrom(msg.sender, amount);  // directly use the mapped interface
 
         uint256 sellPrice = starsArena.getSellPriceAfterFee(subject, amount);
-        starsArena.sellShares(subject, amount);
+        starsArena.sellSharesWithReferrer(subject, amount, referral);
 
         payable(msg.sender).transfer(sellPrice);
         emit TicketSold(msg.sender, subject, amount, sellPrice);  // Emit the event
@@ -134,5 +137,14 @@ contract StarTickets is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         emit ERC20Withdrawn(owner(), _tokenAddress, balance);  // Emit the event
     }
     
+    //Function to change the referrer
+    function setReferrer(address _newReferrer) external onlyOwner {
+        require(_newReferrer != address(0), "New referrer cannot be the zero address.");
+
+        address oldReferrer = referral;
+        referral = _newReferrer;
+
+        emit ReferrerChanged(oldReferrer, _newReferrer);
+}
     
 }
