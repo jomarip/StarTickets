@@ -41,7 +41,12 @@ contract StarTickets is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     IStarsArena public starsArena;
     IStarRegistry public starRegistry;
 
-    mapping(address => IERC20Burnable) public subjectToToken;  // already correctly defined
+    mapping(address => IERC20Burnable) public subjectToToken;  
+    
+    event TicketBought(address indexed buyer, address indexed subject, uint256 amount, uint256 price);
+    event TicketSold(address indexed seller, address indexed subject, uint256 amount, uint256 price);
+    event AvaxWithdrawn(address indexed owner, uint256 amount);
+    event ERC20Withdrawn(address indexed owner, address indexed tokenAddress, uint256 amount);
     
     function initialize(address _starsArenaAddress, address _starRegistryAddress) public initializer {
         // Initialize the upgradeable contracts
@@ -92,6 +97,7 @@ contract StarTickets is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         }
         
         token.mint(msg.sender, amount);  // directly use the mapped interface
+        emit TicketBought(msg.sender, subject, amount, buyPrice);  // Emit the event
     }
 
     function sellTicket(address subject, uint256 amount) public nonReentrant{
@@ -104,6 +110,7 @@ contract StarTickets is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         starsArena.sellShares(subject, amount);
 
         payable(msg.sender).transfer(sellPrice);
+        emit TicketSold(msg.sender, subject, amount, sellPrice);  // Emit the event
     }
     
     receive() external payable {
@@ -115,6 +122,7 @@ contract StarTickets is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 balance = address(this).balance;
         require(balance > 0, "No AVAX to withdraw");
         payable(owner()).transfer(balance);
+        emit AvaxWithdrawn(owner(), balance);  // Emit the event
     }
 
     // Function to withdraw an arbitrary ERC20 token to the owner
@@ -123,6 +131,7 @@ contract StarTickets is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 balance = token.balanceOf(address(this));
         require(balance > 0, "No tokens to withdraw");
         token.transfer(owner(), balance);
+        emit ERC20Withdrawn(owner(), _tokenAddress, balance);  // Emit the event
     }
     
     
