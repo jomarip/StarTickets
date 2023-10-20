@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
 interface IStarsArena {
     function buyShares(address sharesSubject, uint256 amount) external payable;
@@ -35,18 +37,22 @@ contract MyBurnableToken is ERC20Burnable, Ownable {
 }
 
 
-contract StarTickets {
+contract StarTickets is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     IStarsArena public starsArena;
     IStarRegistry public starRegistry;
 
     mapping(address => IERC20Burnable) public subjectToToken;  // already correctly defined
     
-    constructor(address _starsArenaAddress, address _starRegistryAddress) {
+    function initialize(address _starsArenaAddress, address _starRegistryAddress) public initializer {
+        // Initialize the upgradeable contracts
+        __Ownable_init(msg.sender);  // Initialize Ownable
+        __ReentrancyGuard_init();  // Initialize ReentrancyGuard
+
         starsArena = IStarsArena(_starsArenaAddress);
-        starRegistry = IStarRegistry(_starRegistryAddress); 
+        starRegistry = IStarRegistry(_starRegistryAddress);
     }
 
-    function buyTicket(address subject, uint256 amount) public payable {
+    function buyTicket(address subject, uint256 amount) public payable nonReentrant{
         require(msg.value >= amount, "Insufficient funds sent");
 
         uint256 buyPrice = starsArena.getBuyPriceAfterFee(subject, amount);
@@ -88,7 +94,7 @@ contract StarTickets {
         token.mint(msg.sender, amount);  // directly use the mapped interface
     }
 
-    function sellTicket(address subject, uint256 amount) public {
+    function sellTicket(address subject, uint256 amount) public nonReentrant{
         IERC20Burnable token = subjectToToken[subject];
         require(address(token) != address(0), "Token for subject not found");
 
@@ -104,6 +110,20 @@ contract StarTickets {
     // Custom function logic
     }
 
+     // Function to withdraw AVAX (or ETH) to the owner
+    function withdrawAvax() external onlyOwner {
+        uint256 balance = address(this).balance;
+        require(balance > 0, "No AVAX to withdraw");
+        payable(owner()).transfer(balance);
+    }
+
+    // Function to withdraw an arbitrary ERC20 token to the owner
+    function withdrawArbitraryERC20(address _tokenAddress) external onlyOwner {
+        IERC20 token = IERC20(_tokenAddress);
+        uint256 balance = token.balanceOf(address(this));
+        require(balance > 0, "No tokens to withdraw");
+        token.transfer(owner(), balance);
+    }
     
     
 }
