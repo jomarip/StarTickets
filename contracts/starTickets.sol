@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 interface IStarsArena {
     function buyShares(address sharesSubject, uint256 amount) external payable;
@@ -35,7 +37,7 @@ contract MyBurnableToken is ERC20Burnable, Ownable {
 }
 
 
-contract StarTickets {
+contract StarTickets is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     IStarsArena public starsArena;
     IStarRegistry public starRegistry;
 
@@ -46,7 +48,7 @@ contract StarTickets {
         starRegistry = IStarRegistry(_starRegistryAddress); 
     }
 
-    function buyTicket(address subject, uint256 amount) public payable {
+    function buyTicket(address subject, uint256 amount) public payable nonReentrant{
         require(msg.value >= amount, "Insufficient funds sent");
 
         uint256 buyPrice = starsArena.getBuyPriceAfterFee(subject, amount);
@@ -88,7 +90,7 @@ contract StarTickets {
         token.mint(msg.sender, amount);  // directly use the mapped interface
     }
 
-    function sellTicket(address subject, uint256 amount) public {
+    function sellTicket(address subject, uint256 amount) public nonReentrant{
         IERC20Burnable token = subjectToToken[subject];
         require(address(token) != address(0), "Token for subject not found");
 
