@@ -1,3 +1,4 @@
+import "catapulta/hardhat";
 import "@nomiclabs/hardhat-ethers"
 import "@nomiclabs/hardhat-waffle"
 import "@nomiclabs/hardhat-web3"
@@ -25,7 +26,7 @@ let config: HardhatUserConfig = {
           default: 0, // account index 0 will be the deployer by default
           hardhat: 0, // for the hardhat network, account index 0 will be the deployer
           fuji: 0,    // for the fuji network, account index 0 will be the deployer
-          mainnet: 0, // for the mainnet, account index 0 will be the deployer
+          avalanche: 0, // for the mainnet, account index 0 will be the deployer
       },
   },
   networks: {
@@ -40,7 +41,7 @@ let config: HardhatUserConfig = {
       url: "https://api.avax-test.network/ext/bc/C/rpc",
       accounts: [process.env.PRIVATE_KEY],
     },
-    mainnet: {
+    avalanche: {
       url: "https://api.avax.network/ext/bc/C/rpc",
       deploy: ["./deploy/mainnet/"],
       accounts: [process.env.PRIVATE_KEY],
@@ -101,7 +102,7 @@ if (process.env.ETHERSCAN_API) {
 if (process.env.ACCOUNT_PRIVATE_KEYS) {
   config.networks = {
     ...config.networks,
-    mainnet: {
+    avalanche: {
       ...config.networks?.mainnet,
       accounts: JSON.parse(process.env.ACCOUNT_PRIVATE_KEYS),
     },
