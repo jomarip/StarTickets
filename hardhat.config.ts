@@ -17,22 +17,33 @@ if (process.env.HARDHAT_FORK) {
   process.env["HARDHAT_DEPLOY_FORK"] = process.env.HARDHAT_FORK
 }
 
+
 let config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
+  namedAccounts: {
+      deployer: {
+          default: 0, // account index 0 will be the deployer by default
+          hardhat: 0, // for the hardhat network, account index 0 will be the deployer
+          fuji: 0,    // for the fuji network, account index 0 will be the deployer
+          mainnet: 0, // for the mainnet, account index 0 will be the deployer
+      },
+  },
   networks: {
     hardhat: {
       forking: {
         url: "https://api.avax.network/ext/bc/C/rpc",
+        accounts: [process.env.PRIVATE_KEY],
       },
       deploy: ["./deploy"],
     },
     fuji: {
       url: "https://api.avax-test.network/ext/bc/C/rpc",
-      accounts: [process.env.PRIVATE_KEY ?? '']
+      accounts: [process.env.PRIVATE_KEY],
     },
     mainnet: {
       url: "https://api.avax.network/ext/bc/C/rpc",
       deploy: ["./deploy/mainnet/"],
+      accounts: [process.env.PRIVATE_KEY],
     },
   },
   paths: {

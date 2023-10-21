@@ -145,6 +145,6 @@ contract StarTickets is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         referral = _newReferrer;
 
         emit ReferrerChanged(oldReferrer, _newReferrer);
-}
+    }
     
 }
