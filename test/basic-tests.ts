@@ -56,6 +56,8 @@ describe("Starticket and Stars Arena Contracts Tests", function () {
         await StarTicketContract.deployed();
         await StarTicketContract.connect(owner).initialize(StarsArenaContract.address, StarRegistry.address, owner.address);
         
+        // Log the address of StarTicket to confirm it's initialized correctly
+        console.log("StarTicketContract.address:", StarTicketContract.address);
         
 
     });
