@@ -1300,7 +1300,7 @@ contract MyBurnableToken is ERC20Burnable, Ownable {
 }
 
 
-contract StarTickets is OwnableUpgradeable, ReentrancyGuardUpgradeable {
+contract StarTicket is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     IStarsArena public starsArena;
     IStarRegistry public starRegistry;
     address public referral;

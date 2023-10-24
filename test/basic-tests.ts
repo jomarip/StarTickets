@@ -83,6 +83,7 @@ describe("Starticket and Stars Arena Contracts Tests", function () {
             const subject = "0xc96fb6e79e2b4cc477c928f4a5c5180bfeee3786"; // SnowballDeFi
             const starName = "SnowballDeFi";
             const amount = BigNumber.from(1); // Replace with actual amount
+            const scaledAmount = ethers.utils.parseEther("1"); //ERC20 is 18 digits
             
             //add the Star Name and Subject to Registry
             await StarRegistry.connect(owner).addStar(starName,subject);
@@ -114,7 +115,7 @@ describe("Starticket and Stars Arena Contracts Tests", function () {
             const tokenName = await TokenContract.name(); 
             console.log("Token Name: ", tokenName);
 
-            expect(balance).to.equal(amount);
+            expect(balance).to.equal(scaledAmount);
 
             // Verify that Stars Arena contract shows the StartTicket Contract has the ticket
             //StarTicketContract Needs a function to check its shares for this check to work
@@ -139,6 +140,7 @@ describe("Starticket and Stars Arena Contracts Tests", function () {
         it("Should correctly transfer ERC20 tokens to purchaser", async () => {
           const subject = "0xc96fb6e79e2b4cc477c928f4a5c5180bfeee3786"; 
           const amount = ethers.BigNumber.from(1);
+          const scaledAmount = ethers.utils.parseEther("1"); //ERC20 conversion
 
           const buyPrice = await StarsArenaContract.getBuyPriceAfterFee(subject, amount);
 
@@ -148,7 +150,7 @@ describe("Starticket and Stars Arena Contracts Tests", function () {
           const TokenContract = new ethers.Contract(tokenAddress, tokenContract, owner);
           const balance = await TokenContract.balanceOf(purchaser.address);
 
-          expect(balance).to.equal(amount);
+          expect(balance).to.equal(scaledAmount);
         });
 
 
@@ -157,6 +159,7 @@ describe("Starticket and Stars Arena Contracts Tests", function () {
           const subject = "0xc96fb6e79e2b4cc477c928f4a5c5180bfeee3786"; // Replace with the actual subject address
           const amount = ethers.BigNumber.from(1);
           const buyPrice = await StarsArenaContract.getBuyPriceAfterFee(subject, amount);
+          const scaledAmount = ethers.utils.parseEther("1");
           
           await purchaseTicket(purchaser, subject, amount, buyPrice);
 
@@ -165,7 +168,7 @@ describe("Starticket and Stars Arena Contracts Tests", function () {
           const TokenContract = new ethers.Contract(tokenAddress, tokenContract, purchaser); // Note: Using `purchaser` to connect
 
           // Approve StarTicketContract to burn the ERC20 tokens
-          await TokenContract.approve(StarTicketContract.address, amount);
+          await TokenContract.approve(StarTicketContract.address, scaledAmount);
 
           // Get sell price after fee
           const sellPrice = await StarsArenaContract.getSellPriceAfterFee(subject, amount);
@@ -198,6 +201,7 @@ describe("Starticket and Stars Arena Contracts Tests", function () {
           const amount = ethers.BigNumber.from(1);
           const buyPrice = await StarsArenaContract.getBuyPriceAfterFee(subject, amount);
           const invalidAmount = ethers.utils.parseUnits("0.5", 18);  // Half of a token
+          const scaledAmount = ethers.utils.parseEther("1");
           
           await purchaseTicket(purchaser, subject, amount, buyPrice);
           
@@ -220,7 +224,7 @@ describe("Starticket and Stars Arena Contracts Tests", function () {
           const subject = "0xc96fb6e79e2b4cc477c928f4a5c5180bfeee3786"; // Replace with the actual subject address
           const amount = ethers.BigNumber.from(1);
           const buyPrice = await StarsArenaContract.getBuyPriceAfterFee(subject, amount);
-          const excessiveAmount = ethers.BigNumber.from("2");  // More than owned
+          const excessiveAmount = ethers.utils.parseEther("2");;  // More than owned
           
           await purchaseTicket(purchaser, subject, amount, buyPrice);
           
