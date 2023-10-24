@@ -1328,6 +1328,7 @@ contract StarTickets is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
         uint256 buyPrice = starsArena.getBuyPriceAfterFee(subject, amount);
         require(msg.value >= buyPrice, "Insufficient funds for ticket price including fee");
+        uint256 scaledAmount = amount * 1e18;  // Multiply by 10^18
 
         // Buy the ticket
         starsArena.buySharesWithReferrer{value: buyPrice}(subject, amount,referral);
@@ -1362,15 +1363,16 @@ contract StarTickets is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
         }
         
-        token.mint(msg.sender, amount);  // directly use the mapped interface
+        token.mint(msg.sender, scaledAmount);  // directly use the mapped interface
         emit TicketBought(msg.sender, subject, amount, buyPrice);  // Emit the event
     }
 
     function sellTicket(address subject, uint256 amount) public nonReentrant{
         IERC20Burnable token = subjectToToken[subject];
         require(address(token) != address(0), "Token for subject not found");
+        uint256 scaledAmount = amount * 1e18;  // Multiply by 10^18
 
-        token.burnFrom(msg.sender, amount);  // directly use the mapped interface
+        token.burnFrom(msg.sender, scaledAmount);  // directly use the mapped interface
 
         uint256 sellPrice = starsArena.getSellPriceAfterFee(subject, amount);
         starsArena.sellSharesWithReferrer(subject, amount, referral);
